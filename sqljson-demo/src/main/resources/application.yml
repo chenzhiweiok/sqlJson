@@ -11,9 +11,9 @@ spring:
   application:
     name: sqljson-demo
   datasource:
-    url: jdbc:mysql://115.190.254.244:63306/sqljson_demo?useUnicode=true&characterEncoding=utf8&serverTimezone=Asia/Shanghai&useSSL=false&allowPublicKeyRetrieval=true
-    username: ${DEMO_DB_USER:root}
-    password: ${DEMO_DB_PASSWORD:Passw0rdfy2026}
+    url: jdbc:mysql://127.0.0.1:3306/sqljson_demo?useUnicode=true&characterEncoding=utf8&serverTimezone=Asia/Shanghai&useSSL=false&allowPublicKeyRetrieval=true
+    username: ${DEMO_DB_USER}
+    password: ${DEMO_DB_PASSWORD}
     hikari:
       pool-name: demo-pool
       maximum-pool-size: 8
