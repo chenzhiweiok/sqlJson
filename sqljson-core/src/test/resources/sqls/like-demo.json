@@ -1,0 +1,26 @@
+{
+  "likeDemo": {
+    "search": {
+      "description": "多条件模糊查询：关键字按包含匹配，部门精确，两者都可选",
+      "sql": [
+        "SELECT id, user_name, dept",
+        "  FROM t_like",
+        " WHERE 1=1",
+        "   AND (#1 IS NULL OR user_name LIKE #1)   -- [1] like keyword 姓名模糊，自动转义",
+        "   AND (#2 IS NULL OR dept = #2)           -- [2] string dept 部门",
+        " ORDER BY id"
+      ]
+    },
+
+    "searchPrefix": {
+      "description": "同一个条件换成前缀匹配，可走索引",
+      "sql": [
+        "SELECT id, user_name, dept",
+        "  FROM t_like",
+        " WHERE 1=1",
+        "   AND (#1 IS NULL OR user_name LIKE #1)   -- [1] likeprefix keyword 前缀匹配",
+        " ORDER BY id"
+      ]
+    }
+  }
+}

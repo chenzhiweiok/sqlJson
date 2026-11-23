@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>登录 · 用户关系系统</title>
+<style>
+  :root{
+    --ink:#0C447C; --ink-2:#185FA5; --line:#85B7EB; --main:#378ADD;
+    --bg-soft:#E6F1FB; --text:#2C2C2A; --muted:#6B7280;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;min-height:100vh;display:flex;align-items:center;justify-content:center;
+       background:linear-gradient(160deg,#F7FAFD 0%,#E6F1FB 100%);color:var(--text);
+       font:14px/1.6 -apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei",sans-serif}
+  .card{width:min(880px,92vw);background:#fff;border:1px solid #E3EFFA;border-radius:16px;
+        box-shadow:0 10px 30px rgba(12,68,124,.06);display:grid;grid-template-columns:1fr 1fr;overflow:hidden}
+  .side{padding:40px 36px;background:linear-gradient(150deg,#0C447C 0%,#185FA5 55%,#378ADD 100%);color:#fff}
+  .side h1{margin:0 0 10px;font-size:22px;font-weight:600;letter-spacing:.5px}
+  .side p{margin:0 0 22px;font-size:13px;color:#B5D4F4;line-height:1.8}
+  .side ul{margin:0;padding-left:18px;font-size:13px;color:#DCEBFA;line-height:2}
+  .side code{background:rgba(255,255,255,.14);padding:1px 6px;border-radius:4px;font-size:12px}
+  form{padding:40px 36px}
+  h2{margin:0 0 6px;font-size:18px;color:var(--ink)}
+  .tip{margin:0 0 22px;font-size:12px;color:var(--muted)}
+  label{display:block;font-size:12px;color:var(--muted);margin:14px 0 6px}
+  input{width:100%;height:40px;padding:0 12px;border:1px solid #D7E6F5;border-radius:9px;
+        font-size:14px;outline:none;background:#fff;color:var(--text)}
+  input:focus{border-color:var(--main);box-shadow:0 0 0 3px rgba(55,138,221,.14)}
+  button{width:100%;height:42px;margin-top:22px;border:0;border-radius:9px;
+         background:var(--main);color:#fff;font-size:14px;cursor:pointer}
+  button:hover{background:var(--ink-2)}
+  button[disabled]{opacity:.6;cursor:default}
+  .err{margin-top:14px;min-height:18px;font-size:13px;color:#A32D2D}
+  .demo{margin-top:20px;padding:12px 14px;background:#F7FAFD;border:1px dashed #D7E6F5;
+        border-radius:9px;font-size:12px;color:var(--muted);line-height:1.9}
+  .demo b{color:var(--ink-2);font-weight:500}
+  @media(max-width:720px){.card{grid-template-columns:1fr}.side{display:none}}
+</style>
+</head>
+<body>
+<div class="card">
+  <div class="side">
+    <h1>用户关系系统</h1>
+    <p>Spring Boot 3 + sqlJson<br/>SQL 写在 JSON 里，仓库由容器注入</p>
+    <ul>
+      <li>逻辑删除：<code>deleted = 0</code> 自动追加</li>
+      <li>审计字段：创建人 / 更新时间自动填</li>
+      <li>回收站：删除可恢复</li>
+      <li>角色：管理员可删、可恢复</li>
+    </ul>
+  </div>
+  <form onsubmit="return login(event)">
+    <h2>登录</h2>
+    <p class="tip">使用系统内已有账号登录</p>
+
+    <label for="u">用户名</label>
+    <input id="u" autocomplete="username" placeholder="如：邱老师" autofocus/>
+    <label for="p">密码</label>
+    <input id="p" type="password" autocomplete="current-password" placeholder="演示密码 123456"/>
+
+    <button id="btn" type="submit">进入系统</button>
+    <div class="err" id="err"></div>
+
+    <div class="demo">
+      <b>演示账号</b>：邱老师 / 123456（管理员）<br/>
+      其余用户密码同为 123456，角色为成员
+    </div>
+  </form>
+</div>
+
+<script>
+async function login(e){
+  e.preventDefault();
+  const err=document.getElementById('err');
+  const btn=document.getElementById('btn');
+  err.textContent='';
+  const userName=document.getElementById('u').value.trim();
+  const password=document.getElementById('p').value;
+  if(!userName||!password){ err.textContent='请填写用户名和密码'; return false; }
+
+  btn.disabled=true; btn.textContent='登录中…';
+  try{
+    const r=await fetch('/api/auth/login',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({userName,password})
+    });
+    let j=null; try{ j=await r.json(); }catch(_){}
+    if(!r.ok) throw new Error((j&&j.msg)||('登录失败 HTTP '+r.status));
+    location.href='/';
+  }catch(ex){
+    err.textContent=ex.message;
+    btn.disabled=false; btn.textContent='进入系统';
+  }
+  return false;
+}
+</script>
+</body>
+</html>

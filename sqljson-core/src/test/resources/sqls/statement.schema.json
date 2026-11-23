@@ -1,0 +1,79 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://example.com/json-sql/statement.schema.json",
+  "title": "JSON SQL Statement Registry v1",
+  "type": "object",
+  "description": "顶层为命名空间；命名空间下每个 key 是一条语句，语句 id = 命名空间 + '.' + key",
+  "additionalProperties": { "$ref": "#/definitions/namespace" },
+  "definitions": {
+    "namespace": {
+      "type": "object",
+      "additionalProperties": { "$ref": "#/definitions/statement" }
+    },
+    "identifier": {
+      "type": "string",
+      "pattern": "^[A-Za-z_][A-Za-z0-9_]*$"
+    },
+    "statement": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "enum": ["select", "insert", "add", "update", "delete", "count"],
+          "default": "select",
+          "description": "add 是 insert 的别名，给人读的写法"
+        },
+        "table": {
+          "$ref": "#/definitions/identifier",
+          "description": "物理表名；结构模式必填"
+        },
+        "columns": {
+          "type": "array",
+          "items": { "$ref": "#/definitions/identifier" },
+          "description": "select 结构模式的查询列；insert/update 时的 item 宏白名单与顺序"
+        },
+        "sql": {
+          "type": "string",
+          "description": "SQL 模板，支持 #{expr} 与 ${ident}；为空则由结构生成"
+        },
+        "where": {
+          "type": "object",
+          "description": "默认条件，可被调用参数 where 覆盖"
+        },
+        "orderBy": {
+          "oneOf": [
+            { "type": "string", "description": "如 age desc, id asc" },
+            {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "field": { "$ref": "#/definitions/identifier" },
+                  "dir": { "enum": ["asc", "desc"] }
+                },
+                "required": ["field"]
+              }
+            }
+          ]
+        },
+        "limit": { "type": "integer", "minimum": 0 },
+        "offset": { "type": "integer", "minimum": 0 },
+        "batch": { "type": "boolean", "default": false },
+        "params": {
+          "type": "object",
+          "description": "默认参数，调用时可覆盖"
+        },
+        "resultType": {
+          "type": "string",
+          "description": "map | bean:全限定类名"
+        },
+        "timeout": { "type": "integer", "minimum": 0, "description": "秒" },
+        "description": { "type": "string" }
+      },
+      "anyOf": [
+        { "required": ["table"] },
+        { "required": ["sql"] }
+      ],
+      "additionalProperties": false
+    }
+  }
+}

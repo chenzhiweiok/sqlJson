@@ -1,0 +1,87 @@
+{
+  "relation": {
+    "findPage": {
+      "description": "关系分页：按涉及用户 + 关系类型过滤",
+      "sql": [
+        "SELECT r.id, r.user_id, r.target_id, r.rel_type, r.created_at",
+        "  FROM sys_relation r",
+        " WHERE 1=1",
+        "   AND (#1 IS NULL OR r.user_id = #1 OR r.target_id = #1)  -- [1] long   userId  涉及用户",
+        "   AND (#2 IS NULL OR r.rel_type = #2)                     -- [2] string relType 关系类型",
+        " ORDER BY r.id ASC"
+      ],
+      "pagination": {
+        "style": "page",
+        "pageParam": "pageNo",
+        "sizeParam": "pageSize"
+      }
+    },
+
+    "exists": {
+      "description": "判断某条关系是否已存在（同一方向同一类型）",
+      "sql": [
+        "SELECT COUNT(*) AS cnt",
+        "  FROM sys_relation",
+        " WHERE user_id = #1        -- [1] long   userId   发起方",
+        "   AND target_id = #2      -- [2] long   targetId 接收方",
+        "   AND rel_type = #3       -- [3] string relType  类型"
+      ]
+    },
+
+    "countInvolving": {
+      "description": "与该用户相关的全部关系数（入边 + 出边）",
+      "sql": [
+        "SELECT COUNT(*) AS cnt",
+        "  FROM sys_relation",
+        " WHERE user_id = #1 OR target_id = #1   -- [1] long userId 用户主键"
+      ]
+    },
+
+    "ofUser": {
+      "description": "某个用户的全部关系（含出边与入边）",
+      "sql": [
+        "SELECT r.id, r.user_id, r.target_id, r.rel_type, r.created_at,",
+        "       u.user_name AS target_name",
+        "  FROM sys_relation r",
+        "  JOIN sys_user u ON u.id = r.target_id",
+        " WHERE r.user_id = #1        -- [1] long userId 用户主键",
+        " ORDER BY r.id ASC"
+      ]
+    },
+
+    "graph": {
+      "description": "图谱：全部边 + 两端姓名",
+      "sql": [
+        "SELECT r.user_id, a.user_name AS from_name,",
+        "       r.target_id, b.user_name AS to_name,",
+        "       r.rel_type",
+        "  FROM sys_relation r",
+        "  JOIN sys_user a ON a.id = r.user_id",
+        "  JOIN sys_user b ON b.id = r.target_id",
+        " ORDER BY r.id ASC"
+      ]
+    },
+
+    "statsByType": {
+      "description": "关系类型分布",
+      "sql": [
+        "SELECT rel_type, COUNT(*) AS cnt",
+        "  FROM sys_relation",
+        " GROUP BY rel_type",
+        " ORDER BY cnt DESC"
+      ]
+    },
+
+    "topUsers": {
+      "description": "关系数最多的用户",
+      "sql": [
+        "SELECT u.id, u.user_name, u.dept, COUNT(r.id) AS cnt",
+        "  FROM sys_user u",
+        "  LEFT JOIN sys_relation r ON r.user_id = u.id OR r.target_id = u.id",
+        " GROUP BY u.id, u.user_name, u.dept",
+        " ORDER BY cnt DESC, u.id ASC",
+        " LIMIT #1                     -- [1] raw n 取前几名"
+      ]
+    }
+  }
+}

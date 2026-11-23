@@ -1,0 +1,42 @@
+{
+  "user": {
+    "findPage": {
+      "description": "覆盖默认分页：加一个可选状态过滤",
+      "sql": [
+        "SELECT id, user_name, age, balance, status",
+        "  FROM t_user",
+        " WHERE 1=1",
+        "   AND (#1 IS NULL OR status = #1)   -- [1] string status 可选状态",
+        " ORDER BY id ASC"
+      ],
+      "pagination": { "style": "page", "pageParam": "pageNo", "sizeParam": "pageSize" }
+    },
+
+    "search": {
+      "description": "复杂查询：关键字模糊匹配 + 分页",
+      "sql": [
+        "SELECT id, user_name, age, balance, status",
+        "  FROM t_user",
+        " WHERE 1=1",
+        "   AND (#1 IS NULL OR user_name LIKE #1)   -- [1] string keyword 关键字，如 %张%",
+        "   AND (#2 IS NULL OR age >= #2)           -- [2] int    minAge   最小年龄",
+        " ORDER BY id ASC"
+      ],
+      "pagination": { "style": "page", "pageParam": "pageNo", "sizeParam": "pageSize" }
+    },
+
+    "countByStatus": {
+      "description": "聚合统计：GROUP BY 无法自动推导 count，显式给出 countSql",
+      "sql": [
+        "SELECT status, COUNT(*) AS cnt",
+        "  FROM t_user",
+        " GROUP BY status",
+        " ORDER BY status"
+      ],
+      "pagination": {
+        "style": "offset",
+        "countSql": "SELECT COUNT(*) FROM (SELECT status FROM t_user GROUP BY status) t"
+      }
+    }
+  }
+}

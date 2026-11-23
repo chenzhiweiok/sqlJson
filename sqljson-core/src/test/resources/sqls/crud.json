@@ -1,0 +1,74 @@
+{
+  "templates": {
+    "findPage": {
+      "description": "通用分页查询模板：表名、查询列由 {{}} 注入，条件由各语句自己追加",
+      "sql": [
+        "SELECT {{columns}}",
+        "  FROM {{table}}",
+        " WHERE 1=1"
+      ],
+      "pagination": {
+        "style": "offset",
+        "sizeParam": "pageSize",
+        "offsetParam": "offset"
+      }
+    },
+    "pageByPageNo": {
+      "description": "按页码分页：只传 pageNo + pageSize，offset 由引擎算",
+      "sql": [
+        "SELECT {{columns}}",
+        "  FROM {{table}}",
+        " WHERE 1=1"
+      ],
+      "pagination": {
+        "style": "page",
+        "pageParam": "pageNo",
+        "sizeParam": "pageSize"
+      }
+    },
+    "insertInto": {
+      "description": "通用插入模板：#{item} 在列区出列名、在值区出占位符",
+      "sql": [
+        "INSERT INTO {{table}}",
+        "       (#{item})",
+        "VALUES (#{item})"
+      ]
+    }
+  },
+
+  "user": {
+    "findPage": {
+      "template": "findPage",
+      "vars": { "table": "t_user", "columns": "id, user_name, age, balance, status" },
+      "sql": [
+        "   AND status = #1        -- [1] string status 状态 A/B",
+        "   AND age >= #2         -- [2] int    minAge 最小年龄",
+        " ORDER BY id ASC"
+      ]
+    },
+    "findByPageNo": {
+      "template": "pageByPageNo",
+      "vars": { "table": "t_user", "columns": "id, user_name, age" },
+      "sql": [
+        "   AND status = #1        -- [1] string status 状态 A/B",
+        " ORDER BY age DESC"
+      ]
+    },
+    "insert": {
+      "template": "insertInto",
+      "vars": { "table": "t_user" },
+      "columns": ["id", "user_name", "age", "balance", "status"]
+    }
+  },
+
+  "order": {
+    "findPage": {
+      "template": "findPage",
+      "vars": { "table": "t_order", "columns": "id, order_no, amount, status" },
+      "sql": [
+        "   AND status = #1        -- [1] string status 订单状态 PAID/UNPAID",
+        " ORDER BY id ASC"
+      ]
+    }
+  }
+}

@@ -1,0 +1,62 @@
+{
+  "user": {
+    "insert": {
+      "description": "插入用户：两处 #{item} 按位置自动展开 —— 列区出列名，值区出占位符",
+      "columns": ["id", "user_name", "age", "balance", "status"],
+      "sql": [
+        "INSERT INTO t_user",
+        "       (#{item})",
+        "VALUES (#{item})"
+      ]
+    },
+
+    "insertExplicit": {
+      "description": "显式列 + 位置占位，描述写在 SQL 行尾",
+      "sql": [
+        "INSERT INTO t_user (id, user_name, age)",
+        "VALUES (#1, #2, #3)      -- [1] long   id   主键",
+        "                         -- [2] string name 姓名",
+        "                         -- [3] int    age  年龄"
+      ]
+    },
+
+    "updateById": {
+      "description": "按主键更新，SET 区只更新有值字段",
+      "columns": ["user_name", "age", "balance", "status"],
+      "sql": [
+        "UPDATE t_user",
+        "   SET #{item}",
+        " WHERE id = #1           -- [1] long id 主键"
+      ]
+    },
+
+    "findPage": {
+      "description": "分页查询；排序字段走白名单，条数走 raw",
+      "sql": [
+        "SELECT id, user_name, age, balance, status",
+        "  FROM t_user",
+        " WHERE status = #1                    -- [1] string status    状态 A/B",
+        "   AND age BETWEEN #2 AND #3          -- [2] int    minAge    最小年龄",
+        "                                      -- [3] int    maxAge    最大年龄",
+        " ORDER BY #4                          -- [4] ident  sortField 排序字段",
+        " LIMIT #5                             -- [5] raw    limit     返回条数"
+      ],
+      "params": [
+        { "index": 4, "enum": ["age", "id", "balance"] }
+      ]
+    },
+
+    "copyFields": {
+      "description": "多实体：item1 取字段、item2 取状态；字段级描述优先于 item 推断",
+      "sql": [
+        "INSERT INTO t_user (user_name, age, status)",
+        "VALUES (#{item1.user_name}, #{item1.age}, #{item2.status})"
+      ],
+      "params": [
+        { "name": "item1.user_name", "type": "string" },
+        { "name": "item1.age", "type": "int" },
+        { "name": "item2.status", "type": "string", "enum": ["A", "B"] }
+      ]
+    }
+  }
+}

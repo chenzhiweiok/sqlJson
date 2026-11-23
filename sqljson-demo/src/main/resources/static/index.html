@@ -1,0 +1,431 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>用户关系系统 · sqlJson</title>
+<style>
+  :root{
+    --ink:#0C447C; --ink-2:#185FA5; --line:#85B7EB; --main:#378ADD;
+    --bg-soft:#E6F1FB; --text:#2C2C2A; --muted:#6B7280; --card:#FFFFFF;
+    --radius:12px;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:#F7FAFD;color:var(--text);
+       font:14px/1.6 -apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei",sans-serif}
+  header{background:var(--card);border-bottom:1px solid var(--bg-soft);padding:18px 0}
+  .wrap{max-width:1180px;margin:0 auto;padding:0 24px}
+  .hd{display:flex;justify-content:space-between;align-items:flex-start;gap:16px}
+  h1{margin:0;font-size:18px;font-weight:600;color:var(--ink);letter-spacing:.5px}
+  .sub{margin-top:4px;font-size:12px;color:var(--muted)}
+  .who{display:flex;align-items:center;gap:10px;font-size:12px;color:var(--muted);white-space:nowrap}
+  .avatar{width:32px;height:32px;border-radius:50%;background:var(--bg-soft);color:var(--ink);
+          display:flex;align-items:center;justify-content:center;font-weight:600;font-size:13px}
+  nav{display:flex;gap:4px;margin-top:16px;flex-wrap:wrap}
+  nav button{border:1px solid transparent;background:transparent;color:var(--ink-2);
+             padding:8px 16px;border-radius:8px;cursor:pointer;font-size:14px}
+  nav button:hover{background:var(--bg-soft)}
+  nav button.on{background:var(--bg-soft);border-color:var(--line);color:var(--ink);font-weight:500}
+  main{padding:24px 0 60px}
+  .card{background:var(--card);border:1px solid #E3EFFA;border-radius:var(--radius);
+        padding:18px;margin-bottom:16px}
+  .row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+  label{font-size:12px;color:var(--muted)}
+  input,select{height:34px;padding:0 10px;border:1px solid #D7E6F5;border-radius:8px;
+               background:#fff;color:var(--text);font-size:13px;outline:none}
+  input:focus,select:focus{border-color:var(--main);box-shadow:0 0 0 3px rgba(55,138,221,.12)}
+  button.primary{height:34px;padding:0 16px;border:0;border-radius:8px;background:var(--main);
+                 color:#fff;font-size:13px;cursor:pointer}
+  button.primary:hover{background:var(--ink-2)}
+  button.ghost{height:30px;padding:0 12px;border:1px solid var(--line);border-radius:8px;
+               background:#fff;color:var(--ink-2);font-size:12px;cursor:pointer}
+  button.ghost:hover{background:var(--bg-soft)}
+  button.ghost[disabled]{opacity:.45;cursor:not-allowed}
+  button.danger{color:#A32D2D;border-color:#F7C1C1}
+  table{width:100%;border-collapse:collapse;margin-top:14px;font-size:13px}
+  th,td{text-align:left;padding:10px 12px;border-bottom:1px solid #F0F6FC}
+  th{color:var(--muted);font-weight:500;font-size:12px;background:#FBFDFF}
+  tbody tr:hover{background:#FBFDFF}
+  .tag{display:inline-block;padding:1px 8px;border-radius:999px;font-size:12px;
+       background:var(--bg-soft);color:var(--ink-2)}
+  .tag.off{background:#F4F4F2;color:#6B7280}
+  .tag.admin{background:#0C447C;color:#fff}
+  .pager{display:flex;gap:8px;align-items:center;margin-top:14px;font-size:12px;color:var(--muted)}
+  .kpi{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
+  .kpi div{background:var(--bg-soft);border-radius:10px;padding:14px 16px}
+  .kpi b{display:block;font-size:22px;color:var(--ink);font-weight:600}
+  .kpi span{font-size:12px;color:var(--ink-2)}
+  .bar{height:26px;background:var(--bg-soft);border-radius:6px;overflow:hidden;margin:4px 0 10px}
+  .bar i{display:block;height:100%;background:var(--main)}
+  .bar-label{display:flex;justify-content:space-between;font-size:12px;color:var(--ink-2)}
+  .graph{width:100%;height:460px;background:#FBFDFF;border:1px solid #E3EFFA;border-radius:var(--radius)}
+  .hint{font-size:12px;color:var(--muted);margin-top:8px}
+  .empty{padding:28px;text-align:center;color:var(--muted);font-size:13px}
+  .toast{position:fixed;right:24px;bottom:24px;background:var(--ink);color:#fff;
+         padding:10px 16px;border-radius:8px;font-size:13px;opacity:0;transition:.25s}
+  .toast.on{opacity:1}
+  .split{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+  @media(max-width:820px){.split{grid-template-columns:1fr}.kpi{grid-template-columns:repeat(2,1fr)}}
+</style>
+</head>
+<body>
+<header>
+  <div class="wrap">
+    <div class="hd">
+      <div>
+        <h1>用户关系系统</h1>
+        <div class="sub">Spring Boot 3 + sqlJson · SQL 写在 JSON 里，仓库由容器注入</div>
+      </div>
+      <div class="who">
+        <span id="whoName">…</span>
+        <span class="avatar" id="whoAvatar">·</span>
+        <button class="ghost" onclick="logout()">退出</button>
+      </div>
+    </div>
+    <nav>
+      <button class="on" data-tab="users">用户</button>
+      <button data-tab="relations">关系</button>
+      <button data-tab="graph">关系图谱</button>
+      <button data-tab="stats">统计</button>
+      <button data-tab="recycle" id="navRecycle" style="display:none">回收站</button>
+    </nav>
+  </div>
+</header>
+
+<main class="wrap">
+  <section id="tab-users">
+    <div class="card">
+      <div class="row">
+        <input id="kw" placeholder="按姓名搜索" style="width:180px"/>
+        <select id="dept"><option value="">全部部门</option></select>
+        <select id="status">
+          <option value="">全部状态</option>
+          <option value="ACTIVE">在职</option>
+          <option value="INACTIVE">离职</option>
+        </select>
+        <button class="primary" onclick="loadUsers(1)">查询</button>
+        <button class="ghost" onclick="toggleCreate()">新建用户</button>
+      </div>
+      <div id="createBox" style="display:none;margin-top:14px" class="row">
+        <input id="nu-name" placeholder="姓名" style="width:120px"/>
+        <input id="nu-email" placeholder="邮箱" style="width:200px"/>
+        <input id="nu-dept" placeholder="部门" style="width:120px"/>
+        <button class="primary" onclick="createUser()">保存</button>
+      </div>
+      <table>
+        <thead><tr><th>ID</th><th>姓名</th><th>邮箱</th><th>部门</th><th>角色</th><th>状态</th><th>创建时间</th><th>操作</th></tr></thead>
+        <tbody id="userRows"></tbody>
+      </table>
+      <div class="pager" id="userPager"></div>
+    </div>
+  </section>
+
+  <section id="tab-relations" style="display:none">
+    <div class="card">
+      <div class="row">
+        <label>发起</label><select id="rel-from" style="min-width:140px"></select>
+        <label>目标</label><select id="rel-to" style="min-width:140px"></select>
+        <label>类型</label>
+        <select id="rel-type">
+          <option value="FOLLOW">关注</option>
+          <option value="FRIEND">好友</option>
+          <option value="BLOCK">拉黑</option>
+        </select>
+        <button class="primary" onclick="createRelation()">建立关系</button>
+      </div>
+      <div class="row" style="margin-top:12px">
+        <label>筛选用户</label><select id="rel-filter" style="min-width:140px" onchange="loadRelations(1)"></select>
+      </div>
+      <table>
+        <thead><tr><th>ID</th><th>发起</th><th>目标</th><th>类型</th><th>建立时间</th><th>操作</th></tr></thead>
+        <tbody id="relRows"></tbody>
+      </table>
+      <div class="pager" id="relPager"></div>
+      <div class="hint">规则：不能与自己建立关系；同方向同类型不可重复；目标用户必须存在。</div>
+    </div>
+  </section>
+
+  <section id="tab-graph" style="display:none">
+    <div class="card">
+      <div class="row" style="justify-content:space-between">
+        <div class="row">
+          <span class="tag">实线 好友</span><span class="tag">细线 关注</span><span class="tag off">虚线 拉黑</span>
+        </div>
+        <button class="ghost" onclick="loadGraph()">刷新</button>
+      </div>
+      <svg class="graph" id="graph" viewBox="0 0 1000 460" preserveAspectRatio="xMidYMid meet"></svg>
+      <div class="hint">节点大小代表关系数（度数），点击节点可跳转该用户的关系列表。</div>
+    </div>
+  </section>
+
+  <section id="tab-stats" style="display:none">
+    <div class="card"><div class="kpi" id="kpi"></div></div>
+    <div class="split">
+      <div class="card"><h3 style="margin:0 0 12px;font-size:14px;color:var(--ink)">部门人数</h3><div id="deptBars"></div></div>
+      <div class="card"><h3 style="margin:0 0 12px;font-size:14px;color:var(--ink)">关系类型分布</h3><div id="typeBars"></div></div>
+    </div>
+    <div class="card">
+      <h3 style="margin:0 0 12px;font-size:14px;color:var(--ink)">关系最多的用户</h3>
+      <table><thead><tr><th>用户</th><th>部门</th><th>关系数</th></tr></thead><tbody id="topRows"></tbody></table>
+    </div>
+  </section>
+
+  <section id="tab-recycle" style="display:none">
+    <div class="card">
+      <div class="row" style="justify-content:space-between">
+        <div>
+          <h3 style="margin:0;font-size:14px;color:var(--ink)">回收站</h3>
+          <div class="hint" style="margin-top:2px">删除只是置 <code>deleted = 1</code>，数据仍在表里，可随时恢复</div>
+        </div>
+        <button class="ghost" onclick="loadRecycle()">刷新</button>
+      </div>
+      <table>
+        <thead><tr><th>ID</th><th>姓名</th><th>邮箱</th><th>部门</th><th>删除时间</th><th>操作人</th><th>操作</th></tr></thead>
+        <tbody id="recycleRows"></tbody>
+      </table>
+    </div>
+  </section>
+</main>
+
+<div class="toast" id="toast"></div>
+
+<script>
+let META = {depts:[], types:['FOLLOW','FRIEND','BLOCK'], user:null};
+let USERS = [];
+const TYPE_TEXT = {FOLLOW:'关注', FRIEND:'好友', BLOCK:'拉黑'};
+const isAdmin = () => META.user && META.user.role === 'ADMIN';
+
+function toast(msg){
+  const t=document.getElementById('toast');
+  t.textContent=msg; t.classList.add('on');
+  setTimeout(()=>t.classList.remove('on'),1800);
+}
+async function api(path, opt){
+  const r = await fetch(path, opt||{});
+  if(r.status===401){ location.href='/login.html'; throw new Error('未登录'); }
+  let j=null;
+  try{ j = await r.json(); }catch(e){}
+  if(!r.ok) throw new Error((j&&j.msg)||('HTTP '+r.status));
+  return j;
+}
+async function logout(){
+  try{ await api('/api/auth/logout',{method:'POST'}); }catch(e){}
+  location.href='/login.html';
+}
+
+document.querySelectorAll('nav button').forEach(b=>b.onclick=()=>{
+  document.querySelectorAll('nav button').forEach(x=>x.classList.remove('on'));
+  b.classList.add('on');
+  ['users','relations','graph','stats','recycle'].forEach(t=>{
+    document.getElementById('tab-'+t).style.display = (t===b.dataset.tab)?'':'none';
+  });
+  if(b.dataset.tab==='graph') loadGraph();
+  if(b.dataset.tab==='stats') loadStats();
+  if(b.dataset.tab==='relations') loadRelations(1);
+  if(b.dataset.tab==='recycle') loadRecycle();
+});
+
+/* ---------- 用户 ---------- */
+async function loadUsers(page){
+  const kw=document.getElementById('kw').value.trim();
+  const dept=document.getElementById('dept').value;
+  const status=document.getElementById('status').value;
+  const q=new URLSearchParams({page:page||1,size:8});
+  if(kw) q.set('keyword',kw);   // 不再自己拼 %，交给引擎的 like 类型
+  if(dept) q.set('dept',dept);
+  if(status) q.set('status',status);
+  const d=await api('/api/users?'+q.toString());
+  const tb=document.getElementById('userRows');
+  tb.innerHTML = d.list.length? d.list.map(u=>`
+    <tr>
+      <td>${u.id}</td><td>${esc(u.userName)}</td><td>${esc(u.email||'-')}</td><td>${esc(u.dept||'-')}</td>
+      <td><span class="tag ${u.role==='ADMIN'?'admin':''}">${u.role==='ADMIN'?'管理员':'成员'}</span></td>
+      <td><span class="tag ${u.status==='ACTIVE'?'':'off'}">${u.status==='ACTIVE'?'在职':'离职'}</span></td>
+      <td>${(u.createdAt||'').replace('T',' ').slice(0,16)}</td>
+      <td><button class="ghost" onclick="gotoUserRelations(${u.id})">看关系</button>
+          ${isAdmin()?`<button class="ghost danger" onclick="delUser(${u.id})">删除</button>`:''}</td>
+    </tr>`).join('') : '<tr><td colspan="8" class="empty">没有匹配的用户</td></tr>';
+  document.getElementById('userPager').innerHTML =
+    `共 ${d.total} 条 · 第 ${d.pageNo}/${Math.max(d.pages,1)} 页
+     <button class="ghost" onclick="loadUsers(${d.pageNo-1})" ${d.pageNo<=1?'disabled':''}>上一页</button>
+     <button class="ghost" onclick="loadUsers(${d.pageNo+1})" ${d.pageNo>=d.pages?'disabled':''}>下一页</button>`;
+}
+function toggleCreate(){
+  const box=document.getElementById('createBox');
+  box.style.display = box.style.display==='none'?'flex':'none';
+}
+async function createUser(){
+  const body={userName:document.getElementById('nu-name').value.trim(),
+              email:document.getElementById('nu-email').value.trim(),
+              dept:document.getElementById('nu-dept').value.trim()};
+  if(!body.userName){toast('姓名不能为空');return;}
+  try{
+    await api('/api/users',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+    toast('已创建（默认密码 123456，角色 MEMBER）');
+    document.getElementById('nu-name').value='';
+    document.getElementById('nu-email').value='';
+    document.getElementById('nu-dept').value='';
+    await boot(); loadUsers(1);
+  }catch(e){toast(e.message);}
+}
+async function delUser(id){
+  if(!confirm('确认删除该用户？删除后进入回收站，可恢复')) return;
+  try{ await api('/api/users/'+id,{method:'DELETE'}); toast('已移入回收站'); await boot(); loadUsers(1);}
+  catch(e){ toast(e.message); }
+}
+
+/* ---------- 回收站（管理员） ---------- */
+async function loadRecycle(){
+  if(!isAdmin()){ toast('需要管理员权限'); return; }
+  const rows=await api('/api/users/recycle?limit=50');
+  const tb=document.getElementById('recycleRows');
+  tb.innerHTML = rows.length? rows.map(u=>`
+    <tr>
+      <td>${u.id}</td><td>${esc(u.user_name)}</td><td>${esc(u.email||'-')}</td><td>${esc(u.dept||'-')}</td>
+      <td>${(u.updated_at||'').replace('T',' ').slice(0,16)}</td>
+      <td>${esc(u.updated_by||'-')}</td>
+      <td><button class="ghost" onclick="restoreUser(${u.id})">恢复</button></td>
+    </tr>`).join('') : '<tr><td colspan="7" class="empty">回收站是空的</td></tr>';
+}
+async function restoreUser(id){
+  try{
+    await api('/api/users/'+id+'/restore',{method:'POST'});
+    toast('已恢复'); await boot(); loadRecycle(); loadUsers(1);
+  }catch(e){ toast(e.message); }
+}
+
+/* ---------- 关系 ---------- */
+async function loadRelations(page){
+  const uid=document.getElementById('rel-filter').value;
+  const q=new URLSearchParams({page:page||1,size:10});
+  if(uid) q.set('userId',uid);
+  const d=await api('/api/relations?'+q.toString());
+  const name=id=> (USERS.find(u=>u.id===id)||{}).userName || ('#'+id);
+  const tb=document.getElementById('relRows');
+  tb.innerHTML = d.list.length? d.list.map(r=>`
+    <tr>
+      <td>${r.id}</td><td>${esc(name(r.userId))}</td><td>${esc(name(r.targetId))}</td>
+      <td><span class="tag">${TYPE_TEXT[r.relType]||r.relType}</span></td>
+      <td>${(r.createdAt||'').replace('T',' ').slice(0,16)}</td>
+      <td><button class="ghost danger" onclick="delRelation(${r.id})">解除</button></td>
+    </tr>`).join('') : '<tr><td colspan="6" class="empty">暂无关系</td></tr>';
+  document.getElementById('relPager').innerHTML =
+    `共 ${d.total} 条 · 第 ${d.pageNo}/${Math.max(d.pages,1)} 页
+     <button class="ghost" onclick="loadRelations(${d.pageNo-1})" ${d.pageNo<=1?'disabled':''}>上一页</button>
+     <button class="ghost" onclick="loadRelations(${d.pageNo+1})" ${d.pageNo>=d.pages?'disabled':''}>下一页</button>`;
+}
+async function createRelation(){
+  const body={userId:+document.getElementById('rel-from').value,
+              targetId:+document.getElementById('rel-to').value,
+              relType:document.getElementById('rel-type').value};
+  try{
+    await api('/api/relations',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+    toast('关系已建立'); loadRelations(1); loadStats();
+  }catch(e){ toast(e.message); }
+}
+async function delRelation(id){
+  try{ await api('/api/relations/'+id,{method:'DELETE'}); toast('已解除'); loadRelations(1); loadStats(); }
+  catch(e){ toast(e.message); }
+}
+function gotoUserRelations(id){
+  document.querySelector('nav button[data-tab="relations"]').click();
+  document.getElementById('rel-filter').value=id;
+  loadRelations(1);
+}
+
+/* ---------- 图谱 ---------- */
+async function loadGraph(){
+  const d=await api('/api/graph');
+  const svg=document.getElementById('graph');
+  const W=1000,H=460,cx=W/2,cy=H/2,R=175;
+  const nodes=d.nodes, edges=d.edges;
+  const pos={};
+  nodes.forEach((n,i)=>{
+    const a = -Math.PI/2 + i*2*Math.PI/Math.max(nodes.length,1);
+    pos[n.id]={x:cx+R*Math.cos(a), y:cy+R*Math.sin(a)};
+  });
+  let s='';
+  edges.forEach(e=>{
+    const A=pos[e.source],B=pos[e.target];
+    if(!A||!B) return;
+    if(e.type==='BLOCK'){
+      s+=`<line x1="${A.x}" y1="${A.y}" x2="${B.x}" y2="${B.y}" stroke="#B4B2A9"
+            stroke-width="1.2" stroke-dasharray="5 4"/>`;
+    }else if(e.type==='FRIEND'){
+      s+=`<line x1="${A.x}" y1="${A.y}" x2="${B.x}" y2="${B.y}" stroke="#378ADD" stroke-width="2.2" opacity=".55"/>`;
+    }else{
+      s+=`<line x1="${A.x}" y1="${A.y}" x2="${B.x}" y2="${B.y}" stroke="#85B7EB" stroke-width="1.2" opacity=".9"/>`;
+    }
+  });
+  const maxDeg=Math.max(...nodes.map(n=>n.degree),1);
+  nodes.forEach(n=>{
+    const p=pos[n.id];
+    const r=10 + 8*n.degree/maxDeg;
+    const active = n.status==='ACTIVE';
+    s+=`<g style="cursor:pointer" onclick="gotoUserRelations(${n.id})">
+          <circle cx="${p.x}" cy="${p.y}" r="${r}" fill="${active?'#E6F1FB':'#F4F4F2'}"
+                  stroke="${active?'#185FA5':'#B4B2A9'}" stroke-width="1.2"/>
+          <text x="${p.x}" y="${p.y+r+14}" text-anchor="middle" font-size="12"
+                fill="${active?'#0C447C':'#6B7280'}">${esc(n.name)}</text>
+          <text x="${p.x}" y="${p.y+r+27}" text-anchor="middle" font-size="10" fill="#6B7280">${n.degree}</text>
+        </g>`;
+  });
+  svg.innerHTML=s;
+}
+
+/* ---------- 统计 ---------- */
+async function loadStats(){
+  const d=await api('/api/stats');
+  const totalUsers=(d.depts||[]).reduce((a,b)=>a+(b.cnt||0),0);
+  const totalRel=(d.types||[]).reduce((a,b)=>a+(b.cnt||0),0);
+  document.getElementById('kpi').innerHTML=`
+    <div><b>${totalUsers}</b><span>用户总数</span></div>
+    <div><b>${totalRel}</b><span>关系总数</span></div>
+    <div><b>${(d.depts||[]).length}</b><span>部门数</span></div>
+    <div><b>${(d.top[0]?d.top[0].cnt:0)}</b><span>单用户最多关系</span></div>`;
+
+  document.getElementById('deptBars').innerHTML = bars(d.depts,'dept','cnt');
+  document.getElementById('typeBars').innerHTML = (d.types||[]).map(t=>`
+      <div class="bar-label"><span>${TYPE_TEXT[t.rel_type]||t.rel_type}</span><span>${t.cnt}</span></div>
+      <div class="bar"><i style="width:${pct(t.cnt,d.types.map(x=>x.cnt))}%"></i></div>`).join('');
+  document.getElementById('topRows').innerHTML=(d.top||[]).map(u=>`
+      <tr><td>${esc(u.user_name)}</td><td>${esc(u.dept||'-')}</td><td>${u.cnt}</td></tr>`).join('');
+}
+function bars(list,k,v){
+  if(!list||!list.length) return '<div class="empty">暂无数据</div>';
+  return list.map(x=>`
+    <div class="bar-label"><span>${esc(x[k])}</span><span>${x[v]}</span></div>
+    <div class="bar"><i style="width:${pct(x[v],list.map(y=>y[v]))}%"></i></div>`).join('');
+}
+function pct(v,arr){ const m=Math.max(...arr.map(Number),1); return Math.round(v/m*100); }
+function esc(s){ return String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
+
+/* ---------- 启动 ---------- */
+async function boot(){
+  META = await api('/api/meta');
+  USERS = await api('/api/users/all');
+  const user = META.user || {userName:'?', role:'MEMBER'};
+  document.getElementById('whoName').textContent =
+      user.userName + (user.role==='ADMIN' ? ' · 管理员' : '');
+  document.getElementById('whoAvatar').textContent = user.userName.slice(0,1);
+  if(user.role==='ADMIN') document.getElementById('navRecycle').style.display='';
+
+  const deptSel=document.getElementById('dept');
+  deptSel.innerHTML='<option value="">全部部门</option>'+
+      META.depts.map(d=>`<option value="${esc(d)}">${esc(d)}</option>`).join('');
+  const opts=USERS.map(u=>`<option value="${u.id}">${esc(u.userName)}（${esc(u.dept||'-')}）</option>`).join('');
+  document.getElementById('rel-from').innerHTML=opts;
+  document.getElementById('rel-to').innerHTML=opts;
+  document.getElementById('rel-filter').innerHTML='<option value="">全部用户</option>'+opts;
+}
+(async()=>{
+  try{
+    await boot();
+    await loadUsers(1);
+  }catch(e){
+    if(String(e.message)!=='未登录') toast(e.message);
+  }
+})();
+</script>
+</body>
+</html>

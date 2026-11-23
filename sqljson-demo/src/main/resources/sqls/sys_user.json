@@ -1,0 +1,58 @@
+{
+  "user": {
+    "findPage": {
+      "description": "用户分页：姓名模糊（like 自动转义）+ 部门 + 状态，三个条件都可选。逻辑删除条件由框架自动追加",
+      "sql": [
+        "SELECT id, user_name, email, dept, status, role, created_at",
+        "  FROM sys_user",
+        " WHERE 1=1",
+        "   AND (#1 IS NULL OR user_name LIKE #1)   -- [1] like keyword 姓名模糊，自动转义，不用自己拼 %",
+        "   AND (#2 IS NULL OR dept = #2)           -- [2] string dept    部门",
+        "   AND (#3 IS NULL OR status = #3)         -- [3] string status  状态 ACTIVE/INACTIVE",
+        " ORDER BY id ASC"
+      ],
+      "pagination": {
+        "style": "page",
+        "pageParam": "pageNo",
+        "sizeParam": "pageSize"
+      }
+    },
+
+    "findByUserName": {
+      "description": "登录用：按用户名取一条，含密码哈希。框架会自动追加 deleted = 0",
+      "sql": [
+        "SELECT id, user_name, email, dept, status, role, password_hash, created_at",
+        "  FROM sys_user",
+        " WHERE user_name = #1        -- [1] string userName 用户名"
+      ]
+    },
+
+    "countByDept": {
+      "description": "按部门统计人数（只算未删除的）",
+      "sql": [
+        "SELECT dept, COUNT(*) AS cnt",
+        "  FROM sys_user",
+        " GROUP BY dept",
+        " ORDER BY cnt DESC"
+      ],
+      "pagination": {
+        "style": "offset",
+        "countSql": "SELECT COUNT(*) FROM (SELECT dept FROM sys_user WHERE deleted = 0 GROUP BY dept) t"
+      }
+    },
+
+    "recycleList": {
+      "description": "回收站：已逻辑删除的用户（显式写 deleted = 1，框架不会再加 deleted = 0）",
+      "sql": [
+        "SELECT id, user_name, email, dept, status, updated_at, updated_by",
+        "  FROM sys_user",
+        " WHERE deleted = 1",
+        " ORDER BY updated_at DESC",
+        " LIMIT #1                    -- [1] raw limit 条数"
+      ],
+      "params": [
+        { "index": 1, "name": "limit", "type": "raw" }
+      ]
+    }
+  }
+}

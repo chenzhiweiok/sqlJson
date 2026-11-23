@@ -1,0 +1,39 @@
+server:
+  port: 8077
+  servlet:
+    session:
+      timeout: 8h
+      cookie:
+        http-only: true
+        same-site: lax
+
+spring:
+  application:
+    name: sqljson-demo
+  datasource:
+    url: jdbc:mysql://115.190.254.244:63306/sqljson_demo?useUnicode=true&characterEncoding=utf8&serverTimezone=Asia/Shanghai&useSSL=false&allowPublicKeyRetrieval=true
+    username: ${DEMO_DB_USER:root}
+    password: ${DEMO_DB_PASSWORD:Passw0rdfy2026}
+    hikari:
+      pool-name: demo-pool
+      maximum-pool-size: 8
+      # 每个新连接首次建立都要做反向 DNS（约 30s），少建几个
+      minimum-idle: 2
+      # 首次建连要做反向 DNS，DNS 受限时会卡 30~60s，超时必须放宽
+      connection-timeout: 90000
+      idle-timeout: 600000
+      max-lifetime: 1800000
+      # 首次连接会做反向 DNS，DNS 受限时会阻塞几十秒；放到后台预热，不挡启动
+      initialization-fail-timeout: -1
+  jackson:
+    default-property-inclusion: non_null
+    time-zone: Asia/Shanghai
+
+logging:
+  level:
+    root: info
+    io.github.jsonsql: debug
+    com.demo.relation: info
+    com.zaxxer.hikari: warn
+  pattern:
+    console: "%d{HH:mm:ss.SSS} %-5level %-28logger{0} - %msg%n"
