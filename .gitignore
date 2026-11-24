@@ -52,3 +52,5 @@ build/
 
 ### Maven wrapper jar (binary, not needed in VCS) ###
 # .mvn/wrapper/maven-wrapper.jar is already kept above
+### IDE 本地配置：整个目录不入库 ###
+.idea/
