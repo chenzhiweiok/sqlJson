@@ -9,7 +9,8 @@
 - **每层能单独测**：`CrudSql` 只需元数据、`SqlV2` 只需一段 JSON、`RepositoryAssembler` 只需 classpath，
   凡是"必须起数据库才能测"的逻辑，就说明它被放错了层。
 
-当前版本 `1.0.0`，Java 17。已发布到 GitHub Packages（私有包，拉取需要令牌）。
+当前版本 `1.1.0`，Java 17。已发布到 GitHub Packages（私有包，拉取需要令牌）。
+变更记录见 [CHANGELOG.md](CHANGELOG.md)。
 
 ## 安装
 
@@ -24,7 +25,7 @@
 <dependency>
   <groupId>io.github.chenzhiweiok</groupId>
   <artifactId>sqljson-core</artifactId>
-  <version>1.0.0</version>
+  <version>1.1.0</version>
 </dependency>
 <!-- Spring 集成：把 artifactId 换成 sqljson-spring -->
 ```
