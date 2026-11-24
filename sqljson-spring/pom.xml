@@ -5,8 +5,8 @@
     <modelVersion>4.0.0</modelVersion>
 
     <parent>
-        <groupId>io.github.jsonsql</groupId>
-        <artifactId>sqlJson</artifactId>
+        <groupId>io.github.chenzhiweiok</groupId>
+        <artifactId>sqljson-parent</artifactId>
         <version>1.0.0</version>
     </parent>
 
@@ -16,7 +16,7 @@
 
     <dependencies>
         <dependency>
-            <groupId>io.github.jsonsql</groupId>
+            <groupId>io.github.chenzhiweiok</groupId>
             <artifactId>sqljson-core</artifactId>
             <version>${project.version}</version>
         </dependency>

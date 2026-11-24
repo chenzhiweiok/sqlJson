@@ -2,10 +2,20 @@
 
 用 JSON 声明 SQL 与映射的轻量持久层。SQL 是唯一主体，参数描述贴在占位符旁边，编译成参数化 SQL 后执行。
 
+发布坐标（准备发往 Maven Central）：
+
+```xml
+<dependency>
+  <groupId>io.github.chenzhiweiok</groupId>
+  <artifactId>sqljson-core</artifactId>
+  <version>1.0.0</version>
+</dependency>
+<!-- Spring 集成：把上面的 artifactId 换成 sqljson-spring -->
+```
+
 ```
 sqlJson (parent)
 ├── sqljson-core       框架内核：JSON → SQL、注解仓库、事务、分页、指标、join 组装。零 Spring 依赖
-├── sqljson-mybatis    桥接：JSON 语句注册成 MyBatis MappedStatement，执行层交给 MyBatis
 ├── sqljson-spring     @EnableSqlJson：扫描实体、把仓库注册成 Bean
 └── sqljson-demo       业务示例：用户关系系统（Spring Boot 3 + 登录 + 回收站）
 ```
@@ -180,18 +190,7 @@ public UserRepository(@Qualifier("userSqlJsonRepository") SqlJsonRepository<SysU
 
 **必须用 `@Qualifier`**：BeanDefinition 无法携带泛型信息，容器看到的只是两个 `SqlJsonRepository`，按 `SqlJsonRepository<SysUser>` 注入时无法消歧。这是 Spring 对 instanceSupplier 型 Bean 的固有限制，不是配置没写对。
 
-### 5. MyBatis 桥接
-
-```java
-SqlJsonMyBatis.register(configuration, engine, "user", User.class);
-try (SqlSession session = factory.openSession()) {
-    session.selectList("user.findPage", Map.of("minAge", 18));
-}
-```
-
-SQL 仍然是 JSON 声明（可生成、可 diff、可热更新），执行、事务、缓存、插件全交给 MyBatis。参数用 `BoundSql.setAdditionalParameter` 传 `p0..pN`，所以传实体还是 Map 都能正确绑定。
-
-聚合查询请把返回类型指定成 `Map.class` 并给列起别名——MyBatis 对简单类型不走自动映射，无法从任意列名取值。
+### 5. 扩展存储注解（预留）
 
 ## 四、代码组织
 
@@ -220,7 +219,6 @@ SQL 仍然是 JSON 声明（可生成、可 diff、可热更新），执行、�
 | `CurrentUser` | 审计字段的操作人，ThreadLocal |
 | `PageResult` | 分页结果，`list` 永不为 null |
 | `SqlSpecException` | 统一异常，规格错误与执行错误都走它 |
-| `SqlJsonMyBatis` | 把 JSON 语句注册成 MappedStatement |
 | `SqlJsonRegistrar` | 扫描 `@SqlJson`，把仓库注册成 Bean |
 
 调用链只有一条，不绕：
@@ -301,7 +299,6 @@ io.github.jsonsql.meta             元数据：EntityDescriptor、EntityParser(s
 io.github.jsonsql.meta.statement    StatementFactory + 六个内置实现
 io.github.jsonsql.mapping           BeanMapper、JoinAssembler
 io.github.jsonsql.support           SqlLog、SqlMetrics、TxContext
-io.github.jsonsql.legacy            v1 三件套（已 @Deprecated）
 ```
 
 **根包只放「使用方要 import 的东西」**，其余按职责下沉。公开 API 的路径没有变，
@@ -399,8 +396,7 @@ Spring Boot 3 + 会话登录 + 角色 + 回收站，四个 tab：
 ## 六、测试
 
 ```
-sqljson-core    127   占位符/类型/区域/模板/分页/逻辑删除/审计/批量/方言/指标/join/分层
-sqljson-mybatis   5   注册、参数绑定、聚合、语句类型推导
+sqljson-core    12x   占位符/类型/区域/模板/分页/逻辑删除/审计/批量/方言/指标/join/分层
 sqljson-spring    2   扫描装配、CRUD 与分页
 sqljson-demo      7   登录、401/403、逻辑删除、回收站、恢复、业务规则
 ```

@@ -183,7 +183,7 @@ UPDATE t_user SET balance = ? WHERE id = ?
 v2 是有意"退化"成只认 SQL 的：**一条语句就是一坨可读的 SQL + 一份参数说明**，
 不再有"省略 SQL 由引擎拼"的分支。分支少了，行为就确定了。
 
-v1 的 `SqlCompiler` 仍然保留，两套并存：新语句用 v2，历史语句不用改。
+v1 的 `SqlCompiler` 已移除，全部语句统一用 v2。
 
 ## 落地建议
 

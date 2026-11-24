@@ -4,20 +4,56 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
-    <groupId>io.github.jsonsql</groupId>
-    <artifactId>sqlJson</artifactId>
+    <groupId>io.github.chenzhiweiok</groupId>
+    <artifactId>sqljson-parent</artifactId>
     <version>1.0.0</version>
     <packaging>pom</packaging>
 
     <name>sqlJson</name>
     <description>用 JSON 声明 SQL 与映射的轻量 JDBC 层</description>
+    <url>https://github.com/chenzhiweiok/sqlJson</url>
+
+    <licenses>
+        <license>
+            <name>The Apache License, Version 2.0</name>
+            <url>https://www.apache.org/licenses/LICENSE-2.0.txt</url>
+        </license>
+    </licenses>
+
+    <developers>
+        <developer>
+            <name>陈智威</name>
+            <email>chenzhiweiok@users.noreply.github.com</email>
+            <organization>sqlJson</organization>
+            <organizationUrl>https://github.com/chenzhiweiok</organizationUrl>
+        </developer>
+    </developers>
+
+    <scm>
+        <connection>scm:git:https://github.com/chenzhiweiok/sqlJson.git</connection>
+        <developerConnection>scm:git:ssh://git@github.com/chenzhiweiok/sqlJson.git</developerConnection>
+        <url>https://github.com/chenzhiweiok/sqlJson</url>
+    </scm>
+
+    <!--
+      GitHub Packages 发布地址。
+      发布：mvn deploy（settings.xml 里 id=github，用户名 + PAT，PAT 需 write:packages）
+      注意：artifactId 只能含小写字母、数字、连字符，否则 GitHub 返回 422。
+    -->
+    <distributionManagement>
+        <repository>
+            <id>github</id>
+            <name>GitHub chenzhiweiok Apache Maven Packages</name>
+            <url>https://maven.pkg.github.com/chenzhiweiok/sqlJson</url>
+        </repository>
+    </distributionManagement>
 
     <modules>
         <module>sqljson-core</module>
-        <module>sqljson-mybatis</module>
         <module>sqljson-spring</module>
         <module>sqljson-demo</module>
     </modules>
+
 
     <properties>
         <maven.compiler.release>17</maven.compiler.release>
@@ -28,6 +64,9 @@
         <mysql.version>8.4.0</mysql.version>
         <slf4j.version>2.0.13</slf4j.version>
         <spring.boot.version>3.3.5</spring.boot.version>
+        <!-- 发布控制：业务 demo 模块会覆盖成 true；CI 可把 central.autoPublish 设成 true -->
+        <central.skip>false</central.skip>
+        <central.autoPublish>false</central.autoPublish>
     </properties>
 
     <dependencyManagement>
@@ -41,7 +80,7 @@
                 <scope>import</scope>
             </dependency>
             <dependency>
-                <groupId>io.github.jsonsql</groupId>
+                <groupId>io.github.chenzhiweiok</groupId>
                 <artifactId>sqljson-core</artifactId>
                 <version>${project.version}</version>
             </dependency>
@@ -115,4 +154,81 @@
             </plugins>
         </pluginManagement>
     </build>
+
+    <!--
+      Maven Central 发布配置。
+      本地/CI 需要：Portal token（settings.xml server id=central）、GPG 私钥与 passphrase
+      （settings.xml server id=ossrh），以及 -Dgpg.keyname=<KEY_ID>。
+    -->
+    <profiles>
+        <profile>
+            <id>release</id>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-source-plugin</artifactId>
+                        <version>3.3.1</version>
+                        <executions>
+                            <execution>
+                                <id>attach-sources</id>
+                                <goals>
+                                    <goal>jar-no-fork</goal>
+                                </goals>
+                            </execution>
+                        </executions>
+                    </plugin>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-javadoc-plugin</artifactId>
+                        <version>3.6.3</version>
+                        <configuration>
+                            <doclint>none</doclint>
+                        </configuration>
+                        <executions>
+                            <execution>
+                                <id>attach-javadocs</id>
+                                <goals>
+                                    <goal>jar</goal>
+                                </goals>
+                            </execution>
+                        </executions>
+                    </plugin>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-gpg-plugin</artifactId>
+                        <version>3.2.7</version>
+                        <executions>
+                            <execution>
+                                <id>sign-artifacts</id>
+                                <phase>verify</phase>
+                                <goals>
+                                    <goal>sign</goal>
+                                </goals>
+                                <configuration>
+                                    <keyname>${gpg.keyname}</keyname>
+                                    <passphraseServerId>ossrh</passphraseServerId>
+                                    <gpgArguments>
+                                        <arg>--pinentry-mode</arg>
+                                        <arg>loopback</arg>
+                                    </gpgArguments>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                    <plugin>
+                        <groupId>org.sonatype.central</groupId>
+                        <artifactId>central-publishing-maven-plugin</artifactId>
+                        <version>0.12.0</version>
+                        <extensions>true</extensions>
+                        <configuration>
+                            <publishingServerId>central</publishingServerId>
+                            <skipPublishing>${central.skip}</skipPublishing>
+                            <autoPublish>${central.autoPublish}</autoPublish>
+                        </configuration>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+    </profiles>
 </project>

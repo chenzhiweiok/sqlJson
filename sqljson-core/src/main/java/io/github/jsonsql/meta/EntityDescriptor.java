@@ -151,7 +151,7 @@ public final class EntityDescriptor {
      * 审计列的种类。
      *
      * <p>用枚举而不是四个布尔开关，是因为这些列在语义上互斥地归属不同角色，
-     * 而且 {@link #audit(Field, String, AuditKind)} 的调用点读起来能直接看出意图。
+     * 而且 {@link Builder#audit(Field, String, AuditKind)} 的调用点读起来能直接看出意图。
      */
     public enum AuditKind {
         /** 创建时间 */

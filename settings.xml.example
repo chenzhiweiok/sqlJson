@@ -1,0 +1,30 @@
+<!--
+  模板文件：复制为 ~/.m2/settings.xml 后填入真实值。
+  不要把这个文件填好后提交到 Git。
+-->
+<settings xmlns="http://maven.apache.org/SETTINGS/1.2.0"
+          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+          xsi:schemaLocation="http://maven.apache.org/SETTINGS/1.2.0 https://maven.apache.org/xsd/settings-1.2.0.xsd">
+  <servers>
+    <!-- Central Portal → Account → Generate User Token -->
+    <server>
+      <id>central</id>
+      <username>__CENTRAL_TOKEN_USERNAME__</username>
+      <password>__CENTRAL_TOKEN_PASSWORD__</password>
+    </server>
+
+    <!-- maven-gpg-plugin 的 passphraseServerId=ossrh -->
+    <server>
+      <id>ossrh</id>
+      <username>__GPG_KEY_ID__</username>
+      <password>__GPG_PASSPHRASE__</password>
+    </server>
+
+    <!-- GitHub Packages：用户名 + PAT(classic)，PAT 至少 write:packages -->
+    <server>
+      <id>github</id>
+      <username>__GITHUB_USERNAME__</username>
+      <password>__GITHUB_PAT__</password>
+    </server>
+  </servers>
+</settings>
