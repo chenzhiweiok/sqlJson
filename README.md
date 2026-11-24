@@ -58,8 +58,18 @@ mvn -q clean package
 
 演示账号：`邱老师 / 123456`（管理员），其余用户密码同为 `123456`，角色是成员。
 
-数据库连接在 `sqljson-demo/src/main/resources/application.yml`，可用 `DEMO_DB_USER` / `DEMO_DB_PASSWORD` 覆盖。
-**把密码写进配置文件只适合演示，生产请走密钥管理。**
+数据库连接**全部来自环境变量**，配置文件里没有任何主机名或口令：
+
+```bash
+export DEMO_DB_HOST=127.0.0.1     # 默认 127.0.0.1
+export DEMO_DB_PORT=3306          # 默认 3306
+export DEMO_DB_NAME=sqljson_demo  # 默认 sqljson_demo
+export DEMO_DB_USER=root
+export DEMO_DB_PASSWORD='你的口令'   # 没有默认值：不设就启动失败，而不是悄悄用仓库里的口令
+```
+
+本地开发也可以复制 `application-local.yml.example` 为 `application-local.yml` 填自己的连接，
+该文件已在 `.gitignore` 里——**不要把口令写进 `application.yml`**，那是会被提交的。
 
 ## 一、常见用法（按场景）
 

@@ -45,5 +45,10 @@ build/
 .env.*
 *.env
 
+### 本地配置：可能含真实主机与口令，一律不入库 ###
+**/application-local.yml
+**/application-local.yaml
+**/application-local.properties
+
 ### Maven wrapper jar (binary, not needed in VCS) ###
 # .mvn/wrapper/maven-wrapper.jar is already kept above
