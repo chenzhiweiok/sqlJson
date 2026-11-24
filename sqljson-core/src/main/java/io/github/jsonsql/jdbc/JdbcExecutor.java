@@ -48,11 +48,6 @@ public final class JdbcExecutor {
         this.dataSource = dataSource;
     }
 
-    /** @return 底层数据源，事务入口需要它 */
-    public DataSource dataSource() {
-        return dataSource;
-    }
-
     // ---------------- 事务 ----------------
 
     /**

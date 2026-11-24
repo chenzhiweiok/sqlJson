@@ -600,19 +600,32 @@ EntityParsers.register(new RedisJsonParser());
 ### 包结构
 
 ```
-io.github.jsonsql                  公开门面：注解、仓库、分页、异常、CurrentUser、Like、Dialect
-io.github.jsonsql.assembly         装配：RepositoryAssembler、Assembled
-io.github.jsonsql.criteria         条件构建：Criteria
-io.github.jsonsql.jdbc             JDBC 执行与 CRUD SQL 文本：JdbcExecutor、CrudSql、SqlStatement
-io.github.jsonsql.engine           SqlV2（编译引擎）、SoftDeleteRewriter
+io.github.jsonsql                  公开 API：注解、仓库门面、分页、异常、Like、Dialect、CurrentUser
+io.github.jsonsql.assembly         装配：RepositoryAssembler、Assembled（启动期一次，不需要库）
+io.github.jsonsql.criteria         运行期条件：Criteria（只做 AND）
+io.github.jsonsql.engine           编译：SqlV2、SoftDeleteRewriter（不依赖 JDBC）
+io.github.jsonsql.jdbc             执行：JdbcExecutor（唯一接触 java.sql 的类）
+io.github.jsonsql.mapping          映射：BeanMapper、JoinAssembler
 io.github.jsonsql.meta             元数据：EntityDescriptor、EntityParser(s)、SqlJsonParser
-io.github.jsonsql.meta.statement   StatementFactory + 七个内置实现
-io.github.jsonsql.mapping          BeanMapper、JoinAssembler
-io.github.jsonsql.support          SqlLog、SqlMetrics、TxContext、IdSet
+io.github.jsonsql.meta.statement   默认语句：StatementFactory + 七个实现 + DefaultStatementSet + Statements
+io.github.jsonsql.sql              SQL 文本：CrudSql、SqlStatement、IdSet（不依赖 JDBC）
+io.github.jsonsql.support          基础设施：SqlLog、SqlMetrics、TxContext
 ```
 
-依赖方向单向：`assembly` → `engine / meta / support`；`jdbc` → `engine / meta / mapping / support`；
-子包可以依赖根包的共享类型（`SqlSpecException`、`Like`、`PageResult`），反过来不行。
+每个包都有 `package-info.java`，写明职责与边界——判断一个类该放哪，先读那个包的说明。
+
+依赖方向单向：
+
+```
+assembly → engine / meta / support
+sql      → engine / meta            （生成 SQL 文本，不碰连接）
+jdbc     → sql / meta / mapping / support
+criteria → meta
+```
+
+所有子包可以依赖根包的共享类型（`SqlSpecException`、`Like`、`PageResult`），反过来不行。
+把 `sql` 从 `jdbc` 里拆出来的直接收益：`CrudSql` / `IdSet` 一旦不再和 `JdbcExecutor` 同包，
+「这层有没有偷偷拿连接」就不再靠自觉，而是编译期就依赖不到。
 
 ### 四层职责
 

@@ -10,15 +10,15 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * 默认语句集合：按固定顺序装配六条策略，产出一个命名空间节点。
+ * 默认语句集合：按固定顺序装配七条策略，产出一个命名空间节点。
  *
  * <p>顺序有意义——{@code statements()} 和启动日志都按这个顺序输出，
  * 「哪条语句先进来」在排查覆盖问题时能对上号。
  *
- * <p>重名会抛异常而不是静默覆盖：六条默认语句的 id 是业务代码直接引用的
+ * <p>重名会抛异常而不是静默覆盖：默认语句的 id 是业务代码直接引用的
  * （{@code repo.findById()} 之类），安静地少一条，报错会跑到很远的地方。
  *
- * <p>要加第七条，两步：写一个 {@link StatementFactory}，加进 {@link #STANDARD}。
+ * <p>要加第八条，两步：写一个 {@link StatementFactory}，加进 {@link #STANDARD}。
  * 不需要动 {@link EntityDescriptor}，也不需要动仓库——这是拆开之后唯一的好处，
  * 也是拆开的全部理由。
  */

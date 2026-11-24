@@ -537,16 +537,6 @@ public final class SqlJsonRepository<T> {
     public String explain(String stmt, Map<String, Object> args) {
         return assembled.explain(stmt, args);
     }
-
-    /**
-     * 本仓库编译引擎，供 MyBatis 桥接等场景复用。
-     *
-     * @return 引擎实例；装配后只读
-     */
-    public SqlV2 engine() {
-        return assembled.engine();
-    }
-
     /**
      * 语句级指标（全局单例）。
      *

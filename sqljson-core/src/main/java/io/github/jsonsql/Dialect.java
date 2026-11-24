@@ -4,12 +4,12 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
- * 方言：目前只处理分页写法差异。框架自身生成的永远是 {@code LIMIT n [OFFSET m]}，
- * 由方言翻译成目标库的语法。
+ * 方言：处理两类跨库差异——分页写法与 upsert 语法。
+ *
+ * <p>框架自身生成的永远是 {@code LIMIT n [OFFSET m]} 与「标准 INSERT」，
+ * 由方言翻译成目标库能执行的形态。
  */
 public interface Dialect {
-
-    Pattern PAGING = Pattern.compile("(?i)\\s+limit\\s+(\\d+)(?:\\s+offset\\s+(\\d+))?\\s*$");
 
     /**
      * 方言标识，用于日志与排查（「这条 SQL 是按哪个方言改写的」）。
@@ -21,7 +21,7 @@ public interface Dialect {
     /**
      * 把 {@code LIMIT n OFFSET m} 翻译成本方言写法。
      *
-     * <p>只处理语句末尾的分页子句：正则 {@link #PAGING} 不匹配时原样返回，
+     * <p>只处理语句末尾的分页子句：不匹配时原样返回，
      * 所以子查询里的 limit、或者手写了别的分页形式的语句不会被误改。
      *
      * @param sql 已渲染、已改写过的 SQL
@@ -74,8 +74,8 @@ public interface Dialect {
     /**
      * PostgreSQL：分页语法与 MySQL 一致，upsert 用 {@code on conflict}。
      *
-     * <p>单独一个实现而不是复用 Simple，是因为两种库的 upsert 语法完全不同——
-     * 共用实现只能退化成「都不支持」。
+     * <p>与 MySQL 分开实现，是因为两者的 upsert 语法毫无共同点——
+     * 共用一个实现只能退化成「都不支持」，那等于没实现。
      *
      * @return 方言实例
      */
@@ -117,19 +117,6 @@ public interface Dialect {
             case "h2" -> h2();
             default -> mysql();
         };
-    }
-
-    final class Simple implements Dialect {
-        private final String name;
-
-        Simple(String name) {
-            this.name = name;
-        }
-
-        @Override
-        public String name() {
-            return name;
-        }
     }
 
     /**
@@ -242,6 +229,11 @@ public interface Dialect {
     }
 
     final class OracleLike implements Dialect {
+
+        /** 只匹配语句末尾的 limit，子查询里的分页不会被误改 */
+        private static final Pattern PAGING =
+                Pattern.compile("(?i)\\s+limit\\s+(\\d+)(?:\\s+offset\\s+(\\d+))?\\s*$");
+
         private final String name;
 
         OracleLike(String name) {

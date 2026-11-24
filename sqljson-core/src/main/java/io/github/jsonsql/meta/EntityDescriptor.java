@@ -634,18 +634,6 @@ public final class EntityDescriptor {
         return DefaultStatementSet.buildWith(this, all);
     }
 
-    /** 反射实例化扩展工厂；只在这里做一次，所以失败就直接抛 */
-    private static StatementFactory instantiate(Class<? extends StatementFactory> factoryType, Class<?> entityType) {
-        try {
-            var ctor = factoryType.getDeclaredConstructor();
-            ctor.setAccessible(true);
-            return ctor.newInstance();
-        } catch (ReflectiveOperationException e) {
-            throw new SqlSpecException(entityType.getSimpleName() + " 声明的语句工厂无法实例化: "
-                    + factoryType.getName() + "（需要 public 无参构造）");
-        }
-    }
-
     public static String snake(String name) {
         StringBuilder sb = new StringBuilder();
         for (int i = 0; i < name.length(); i++) {
