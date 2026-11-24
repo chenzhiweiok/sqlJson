@@ -1,7 +1,7 @@
 package io.github.jsonsql;
 
-import io.github.jsonsql.jdbc.CrudSql;
-import io.github.jsonsql.jdbc.SqlStatement;
+import io.github.jsonsql.sql.CrudSql;
+import io.github.jsonsql.sql.SqlStatement;
 import io.github.jsonsql.meta.EntityDescriptor;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;

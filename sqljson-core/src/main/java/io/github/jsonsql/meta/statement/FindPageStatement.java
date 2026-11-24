@@ -2,7 +2,6 @@ package io.github.jsonsql.meta.statement;
 
 import io.github.jsonsql.Dialect;
 import io.github.jsonsql.meta.EntityDescriptor;
-import io.github.jsonsql.meta.Statements;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 
 /**
