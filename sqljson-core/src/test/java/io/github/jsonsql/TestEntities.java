@@ -74,4 +74,22 @@ final class TestEntities {
             this.amount = new BigDecimal(amount);
         }
     }
+
+    /** 业务主键（非自增）：upsert 的冲突判定需要调用方给得出 id */
+    @SqlJson(value = "dict", table = "t_dict")
+    static class DictItem {
+        @SqlColumn(id = true)
+        Long id;
+        String code;
+        String name;
+
+        DictItem() {
+        }
+
+        DictItem(long id, String code, String name) {
+            this.id = id;
+            this.code = code;
+            this.name = name;
+        }
+    }
 }

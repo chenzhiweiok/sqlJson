@@ -145,4 +145,46 @@ class DemoApiTest {
         assertTrue(node.get("depts").size() >= 2, "至少两个部门，实际: " + node.get("depts"));
         assertTrue(node.get("types").size() >= 1, "至少一种关系类型");
     }
+
+    @Test
+    @Order(8)
+    @DisplayName("countBy 接口：与列表 total 同口径，非法状态被拒")
+    void countByStatus() throws Exception {
+        MockHttpSession s = login("邱老师", "123456");
+
+        mvc.perform(get("/api/users/count").session(s))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.count").value(3));
+
+        mvc.perform(get("/api/users/count").param("status", "ACTIVE").session(s))
+                .andExpect(jsonPath("$.count").value(3));
+
+        mvc.perform(get("/api/users/count").param("status", "inactive").session(s))
+                .andExpect(jsonPath("$.count").value(0));
+
+        mvc.perform(get("/api/users/count").param("status", "BANNED").session(s))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    @Order(9)
+    @DisplayName("级联删除：连关系一起删，一个事务内完成")
+    void cascadeDelete() throws Exception {
+        MockHttpSession admin = login("邱老师", "123456");
+
+        // 张三(id=2) 有一条关系，普通删除会被拒（见 Order(6)），级联删除应成功
+        mvc.perform(delete("/api/users/2/cascade").session(admin))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.ok").value(true));
+
+        mvc.perform(get("/api/users").session(admin))
+                .andExpect(jsonPath("$.total").value(2));
+
+        MvcResult graph = mvc.perform(get("/api/graph").session(admin))
+                .andExpect(status().isOk())
+                .andReturn();
+        JsonNode edges = json.readTree(graph.getResponse().getContentAsString(StandardCharsets.UTF_8))
+                .get("edges");
+        assertEquals(0, edges.size(), "关系应随用户一起被删，实际: " + edges);
+    }
 }

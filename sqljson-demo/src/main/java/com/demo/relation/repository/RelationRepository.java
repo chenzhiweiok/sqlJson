@@ -74,4 +74,17 @@ public class RelationRepository {
     public int delete(long id) {
         return repo.deleteById(id);
     }
+
+    /**
+     * 删除与某用户相关的全部关系（入边 + 出边）。
+     *
+     * <p>给级联删用户用：先清子表再删主表，整个过程由调用方的 {@code tx} 包住。
+     * 关系表没有逻辑删除列，所以这里是物理删除——用户已删，留着悬挂边没有意义。
+     *
+     * @param userId 用户主键
+     * @return 删除的关系条数
+     */
+    public int deleteByUserId(long userId) {
+        return repo.update("deleteByUserId", Map.of("userId", userId));
+    }
 }

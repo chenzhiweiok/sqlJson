@@ -28,8 +28,7 @@ import java.lang.reflect.Modifier;
  * 这些约定只在 SQL 这一侧成立——换成 Redis 时不该假设有 {@code deleted} 列，
  * 所以它们写在解析器里，而不是 {@code EntityDescriptor} 里。
  */
-public final class SqlJsonParser implements
-        EntityParser<SqlJson> {
+public final class SqlJsonParser implements EntityParser<SqlJson> {
 
     @Override
     public Class<SqlJson> annotationType() {

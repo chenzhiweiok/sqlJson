@@ -82,6 +82,14 @@
         " ORDER BY cnt DESC, u.id ASC",
         " LIMIT #1                     -- [1] raw n 取前几名"
       ]
+    },
+
+    "deleteByUserId": {
+      "description": "物理删除与某用户相关的全部关系（入边 + 出边）。级联删用户时先清子表；关系表没有逻辑删除列，所以这里是真删",
+      "sql": [
+        "DELETE FROM sys_relation",
+        " WHERE user_id = #1 OR target_id = #1   -- [1] long userId 用户主键"
+      ]
     }
   }
 }

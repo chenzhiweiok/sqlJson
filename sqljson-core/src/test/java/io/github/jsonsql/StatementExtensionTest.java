@@ -2,7 +2,7 @@ package io.github.jsonsql;
 
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import io.github.jsonsql.meta.EntityDescriptor;
-import io.github.jsonsql.meta.Statements;
+import io.github.jsonsql.meta.statement.Statements;
 import io.github.jsonsql.meta.statement.StatementFactory;
 import org.h2.jdbcx.JdbcDataSource;
 import org.junit.jupiter.api.BeforeAll;
@@ -111,7 +111,8 @@ class StatementExtensionTest {
         EntityDescriptor d = EntityDescriptor.of(WithOverride.class);
         List<String> names = new java.util.ArrayList<>();
         d.defaultStatements().fieldNames().forEachRemaining(names::add);
-        assertEquals(List.of("insert", "updateById", "deleteById", "findById", "findAll", "findPage"), names,
+        assertEquals(List.of("insert", "updateById", "deleteById", "findById",
+                        "findByIds", "findAll", "findPage"), names,
                 "覆盖不应改变语句顺序");
 
         String sql = d.defaultStatements().get("findPage").get("sql").get(0).asText();

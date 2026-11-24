@@ -1,4 +1,4 @@
-package io.github.jsonsql.jdbc;
+package io.github.jsonsql.sql;
 
 import java.util.List;
 

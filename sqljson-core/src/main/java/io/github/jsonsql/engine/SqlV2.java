@@ -938,9 +938,4 @@ public final class SqlV2 {
         }
         return out.toString().trim();
     }
-
-    /** 把某条语句渲染后的样子打出来，便于排查 */
-    public String explain(String id, Map<String, Object> args) {
-        return prepare(id, args).toString();
-    }
 }

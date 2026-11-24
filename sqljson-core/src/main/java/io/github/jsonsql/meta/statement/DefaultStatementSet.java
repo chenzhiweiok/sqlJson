@@ -1,13 +1,7 @@
-package io.github.jsonsql.meta;
+package io.github.jsonsql.meta.statement;
 
 import io.github.jsonsql.SqlSpecException;
-import io.github.jsonsql.meta.statement.DeleteByIdStatement;
-import io.github.jsonsql.meta.statement.FindAllStatement;
-import io.github.jsonsql.meta.statement.FindByIdStatement;
-import io.github.jsonsql.meta.statement.FindPageStatement;
-import io.github.jsonsql.meta.statement.InsertStatement;
-import io.github.jsonsql.meta.statement.StatementFactory;
-import io.github.jsonsql.meta.statement.UpdateByIdStatement;
+import io.github.jsonsql.meta.EntityDescriptor;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 
 import java.util.ArrayList;
@@ -16,26 +10,27 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * 默认语句集合：按固定顺序装配六条策略，产出一个命名空间节点。
+ * 默认语句集合：按固定顺序装配七条策略，产出一个命名空间节点。
  *
  * <p>顺序有意义——{@code statements()} 和启动日志都按这个顺序输出，
  * 「哪条语句先进来」在排查覆盖问题时能对上号。
  *
- * <p>重名会抛异常而不是静默覆盖：六条默认语句的 id 是业务代码直接引用的
+ * <p>重名会抛异常而不是静默覆盖：默认语句的 id 是业务代码直接引用的
  * （{@code repo.findById()} 之类），安静地少一条，报错会跑到很远的地方。
  *
- * <p>要加第七条，两步：写一个 {@link StatementFactory}，加进 {@link #STANDARD}。
+ * <p>要加第八条，两步：写一个 {@link StatementFactory}，加进 {@link #STANDARD}。
  * 不需要动 {@link EntityDescriptor}，也不需要动仓库——这是拆开之后唯一的好处，
  * 也是拆开的全部理由。
  */
 public final class DefaultStatementSet {
 
-    /** 默认六条，顺序即输出顺序 */
+    /** 默认七条，顺序即输出顺序；要加第八条只需写一个 StatementFactory 并加进来 */
     private static final List<StatementFactory> STANDARD = List.of(
             new InsertStatement(),
             new UpdateByIdStatement(),
             new DeleteByIdStatement(),
             new FindByIdStatement(),
+            new FindByIdsStatement(),
             new FindAllStatement(),
             new FindPageStatement());
 

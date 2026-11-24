@@ -38,6 +38,13 @@ final class TestDb {
                           amount decimal(12,2)
                         )
                         """);
+                st.execute("""
+                        create table t_dict (
+                          id bigint primary key,
+                          code varchar(32),
+                          name varchar(64)
+                        )
+                        """);
             }
             try (Connection c2 = ds.getConnection(); Statement st2 = c2.createStatement()) {
                 st2.execute("""
