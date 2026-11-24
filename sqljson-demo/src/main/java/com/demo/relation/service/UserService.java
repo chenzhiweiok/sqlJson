@@ -127,6 +127,27 @@ public class UserService {
     }
 
     /**
+     * 级联删除：先断开该用户的全部关系，再删用户，整个过程一个事务。
+     *
+     * <p>与 {@link #delete(long)} 的分工要说清楚：那个是「有关系就拒绝」的保守策略，
+     * 适合日常操作；这个是显式的「连关系一起删」，只给明确知道自己要什么的管理动作
+     * （例如后台清理、测试数据回收），所以单独一个接口，不做一个 boolean 开关。
+     *
+     * <p>顺序不能反：先删主表再删子表的话，一旦子表删除失败，事务回滚前会短暂出现
+     * 「用户已删、关系还在」的悬挂数据——虽然回滚能收掉，但锁持有时间和死锁面积都更大。
+     *
+     * @param id 用户主键
+     * @throws BizException 404 用户不存在
+     */
+    public void cascadeDelete(long id) {
+        get(id);
+        users.tx(() -> {
+            relations.deleteByUserId(id);
+            users.delete(id);
+        });
+    }
+
+    /**
      * 全量用户，给下拉选项用。
      *
      * <p>没有分页和上限：只适合演示数据量。真实项目应改成「按关键字搜索前 20 条」，
@@ -134,6 +155,28 @@ public class UserService {
      */
     public List<SysUser> all() {
         return users.all();
+    }
+
+    /**
+     * 按状态统计人数。
+     *
+     * <p>状态为空表示全部（不含已删）。非空时与 create/update 共用同一份
+     * {@link #STATUS} 白名单——统计接口不应该成为「可以传任意值」的例外，
+     * 否则同一个字段在写路径被校验、读路径不校验，规则就形同虚设。
+     *
+     * @param status ACTIVE / INACTIVE，null 或空白表示全部
+     * @return 人数
+     * @throws BizException 400 状态值不在白名单
+     */
+    public long count(String status) {
+        if (status == null || status.isBlank()) {
+            return users.countAll();
+        }
+        String s = status.trim().toUpperCase(java.util.Locale.ROOT);
+        if (!STATUS.contains(s)) {
+            throw new BizException("状态只能是 ACTIVE 或 INACTIVE");
+        }
+        return users.countByStatus(s);
     }
 
     public List<Map<String, Object>> deptStats() {

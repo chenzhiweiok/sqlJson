@@ -48,6 +48,21 @@ public class UserRepository {
         return repo.findAll();
     }
 
+    /**
+     * 按状态计数。
+     *
+     * <p>用框架的 {@code countBy}：字段名由实体元数据校验成列名、值走参数绑定，
+     * 逻辑删除过滤自动带上，所以口径与列表页的分页总数一致。
+     */
+    public long countByStatus(String status) {
+        return repo.countBy("status", status);
+    }
+
+    /** 全量计数（不含已删） */
+    public long countAll() {
+        return repo.countAll();
+    }
+
     public long create(SysUser user) {
         return repo.insert(user);
     }
@@ -59,6 +74,16 @@ public class UserRepository {
     /** 逻辑删除：框架会改写成 update ... set deleted = 1 */
     public int delete(long id) {
         return repo.deleteById(id);
+    }
+
+    /**
+     * 事务透传：级联操作要跨两个仓库，需要同一个连接。
+     *
+     * <p>框架的 {@code tx} 按线程共享连接，所以这里只要把两个仓库的调用放进同一个块，
+     * 它们就自然在同一个事务里——不需要传连接，也不需要分布式事务。
+     */
+    public void tx(Runnable body) {
+        repo.tx(body);
     }
 
     /** 回收站列表：语句里显式写了 deleted = 1，框架不会再加 deleted = 0 */

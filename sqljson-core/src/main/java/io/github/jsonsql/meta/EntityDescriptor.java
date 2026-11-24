@@ -5,13 +5,19 @@ import io.github.jsonsql.SqlJsonRepository;
 import io.github.jsonsql.SqlSpecException;
 import io.github.jsonsql.engine.SqlV2;
 import io.github.jsonsql.meta.statement.StatementFactory;
+import io.github.jsonsql.meta.statement.DefaultStatementSet;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 
 import java.lang.reflect.Field;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 /**
  * 实体的运行时描述：反射一次，得到表名、列清单、主键、逻辑删除列、审计列，
@@ -59,6 +65,22 @@ public final class EntityDescriptor {
 
     /** 全部参与映射的列 */
     private final List<Col> columns;
+
+    /**
+     * 由 {@link #columns} 派生出来的只读视图，构造时一次算好。
+     *
+     * <p>为什么缓存：这些值随实体元数据固定，但运行期会被高频查询——
+     * 每条 {@code countBy} / {@code updateFields} 都要做「字段名 → 列名」解析，
+     * 每个 Criteria 渲染都要拿一份列清单。原先 {@link #updateColumns()} 每次 new 一个
+     * ArrayList 再遍历，在批量与条件路径上属于纯浪费；而且元数据不可变，
+     * 缓存永远不会失效。
+     */
+    private final Map<String, String> columnByField;
+    private final Set<String> columnNames;
+    private final List<String> allColumns;
+    private final List<String> insertColumns;
+    private final List<String> updateColumns;
+    private final Set<String> updateColumnSet;
 
     /** 注解上声明的扩展语句工厂，装配时与内置六条合并 */
     private final List<StatementFactory> extraStatements;
@@ -145,6 +167,30 @@ public final class EntityDescriptor {
         this.updatedByField = b.updatedByField;
         this.columns = List.copyOf(b.columns);
         this.extraStatements = List.copyOf(b.extraStatements);
+
+        Map<String, String> byField = new LinkedHashMap<>();
+        Set<String> names = new LinkedHashSet<>();
+        List<String> all = new ArrayList<>(this.columns.size());
+        List<String> insertable = new ArrayList<>(this.columns.size());
+        List<String> updatable = new ArrayList<>(this.columns.size());
+        for (Col c : this.columns) {
+            byField.putIfAbsent(c.field().getName(), c.column());
+            names.add(c.column());
+            all.add(c.column());
+            // 自增主键不进 INSERT：值由数据库生成，写 null 反而会覆盖默认值
+            if (!(c.id() && idGenerated) && !c.column().equals(deletedColumn)) {
+                insertable.add(c.column());
+            }
+            if (!c.id() && !c.column().equals(deletedColumn)) {
+                updatable.add(c.column());
+            }
+        }
+        this.columnByField = Collections.unmodifiableMap(byField);
+        this.columnNames = Collections.unmodifiableSet(names);
+        this.allColumns = List.copyOf(all);
+        this.insertColumns = List.copyOf(insertable);
+        this.updateColumns = List.copyOf(updatable);
+        this.updateColumnSet = Collections.unmodifiableSet(new LinkedHashSet<>(updatable));
     }
 
     /**
@@ -451,39 +497,69 @@ public final class EntityDescriptor {
         return deletedColumn != null;
     }
 
+    /** @return 全部列名，只读，顺序与字段声明一致 */
     public List<String> allColumnNames() {
-        List<String> out = new ArrayList<>();
-        for (Col c : columns) {
-            out.add(c.column());
-        }
-        return out;
+        return allColumns;
     }
 
     /** 可写列：insert 用（含非自增主键，排除逻辑删除列） */
     public List<String> insertColumns() {
-        List<String> out = new ArrayList<>();
-        for (Col c : columns) {
-            if (c.id() && idGenerated) {
-                continue;
-            }
-            if (c.column().equals(deletedColumn)) {
-                continue;
-            }
-            out.add(c.column());
-        }
-        return out;
+        return insertColumns;
     }
 
     /** 可更新列：update 用（排除主键与逻辑删除列，后者由 restore 专门改写） */
     public List<String> updateColumns() {
-        List<String> out = new ArrayList<>();
-        for (Col c : columns) {
-            if (c.id() || c.column().equals(deletedColumn)) {
-                continue;
-            }
-            out.add(c.column());
+        return updateColumns;
+    }
+
+    /**
+     * 可更新列的集合视图，用于 O(1) 白名单校验。
+     *
+     * <p>{@code updateFields} / {@code updateBy} 的列名来自调用方，
+     * 每次都要判「这一列能不能写」。用 List 做 contains 是 O(n)，
+     * 虽然 n 很小，但这类校验每个值都要做一次；直接给 Set，语义也更准确。
+     *
+     * @return 不可变集合
+     */
+    public Set<String> updateColumnSet() {
+        return updateColumnSet;
+    }
+
+    /**
+     * 字段名 → 列名。键是 Java 字段名（{@code userName}），值是物理列名（{@code user_name}）。
+     *
+     * @return 不可变映射，顺序与字段声明一致
+     */
+    public Map<String, String> columnByField() {
+        return columnByField;
+    }
+
+    /**
+     * 把「字段名或列名」解析成物理列名，解析不到直接抛异常。
+     *
+     * <p>这是运行期唯一允许把调用方字符串变成列名的地方，所以校验必须在这里做：
+     * 只认元数据里真实存在的列，别的一律拒绝。同时接受字段名与列名，
+     * 是因为两种写法在项目里都会出现（实体字段习惯 camelCase，手写 SQL 习惯 snake_case），
+     * 强制统一只会让调用方多做一次转换。
+     *
+     * @param fieldOrColumn 字段名或列名
+     * @return 物理列名
+     * @throws SqlSpecException 两者都不匹配
+     */
+    public String columnOf(String fieldOrColumn) {
+        if (fieldOrColumn == null || fieldOrColumn.isBlank()) {
+            throw new SqlSpecException(type.getSimpleName() + ": 列名不能为空");
         }
-        return out;
+        String key = fieldOrColumn.trim();
+        String column = columnByField.get(key);
+        if (column != null) {
+            return column;
+        }
+        if (columnNames.contains(key)) {
+            return key;
+        }
+        throw new SqlSpecException(type.getSimpleName() + " 没有字段或列 " + key
+                + "，可用字段: " + columnByField.keySet());
     }
 
     /** 审计字段写入实体（只在为空时填，不覆盖调用方显式传的值） */

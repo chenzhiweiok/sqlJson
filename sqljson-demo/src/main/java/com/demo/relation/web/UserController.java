@@ -27,10 +27,12 @@ import java.util.Map;
  *   <tr><th>方法</th><th>路径</th><th>作用</th><th>权限</th></tr>
  *   <tr><td>GET</td><td>/api/users</td><td>分页查询</td><td>登录</td></tr>
  *   <tr><td>GET</td><td>/api/users/all</td><td>全量（下拉选项）</td><td>登录</td></tr>
+ *   <tr><td>GET</td><td>/api/users/count</td><td>按状态计数</td><td>登录</td></tr>
  *   <tr><td>GET</td><td>/api/users/{id}</td><td>单条</td><td>登录</td></tr>
  *   <tr><td>POST</td><td>/api/users</td><td>新建</td><td>登录</td></tr>
  *   <tr><td>PUT</td><td>/api/users/{id}</td><td>更新（只改非空字段）</td><td>登录</td></tr>
  *   <tr><td>DELETE</td><td>/api/users/{id}</td><td>逻辑删除</td><td>管理员</td></tr>
+ *   <tr><td>DELETE</td><td>/api/users/{id}/cascade</td><td>级联删除（连关系一起）</td><td>管理员</td></tr>
  *   <tr><td>GET</td><td>/api/users/recycle</td><td>回收站</td><td>管理员</td></tr>
  *   <tr><td>POST</td><td>/api/users/{id}/restore</td><td>恢复</td><td>管理员</td></tr>
  * </table>
@@ -63,6 +65,21 @@ public class UserController {
     @GetMapping("/all")
     public List<SysUser> all() {
         return users.all();
+    }
+
+    /**
+     * 按状态统计人数。
+     *
+     * <p>数字来自框架的 {@code countBy}：条件字段经实体元数据解析成列名、值参数化，
+     * 逻辑删除过滤自动带上——所以这里统计出来的数和列表页的分页总数是同一个口径，
+     * 不需要另外写一条 count 语句，也不会「列表少一条、统计多一条」。
+     *
+     * @param status ACTIVE / INACTIVE；不传表示全部（不含已删）
+     * @return {@code {"count": n}}
+     */
+    @GetMapping("/count")
+    public Map<String, Object> count(@RequestParam(name = "status", required = false) String status) {
+        return Map.of("count", users.count(status));
     }
 
     @GetMapping("/{id}")
@@ -107,6 +124,19 @@ public class UserController {
     @RequireAdmin
     public Map<String, Object> delete(@PathVariable("id") long id) {
         users.delete(id);
+        return Map.of("ok", true);
+    }
+
+    /**
+     * 级联删除（管理员）：先删除该用户的全部关系，再逻辑删除用户本人，一个事务。
+     *
+     * <p>用于「后台清理」这类明确要连关系一起删的场景；日常删除仍然走
+     * {@code DELETE /api/users/{id}}，有关联时会被拒绝。
+     */
+    @DeleteMapping("/{id}/cascade")
+    @RequireAdmin
+    public Map<String, Object> cascadeDelete(@PathVariable("id") long id) {
+        users.cascadeDelete(id);
         return Map.of("ok", true);
     }
 

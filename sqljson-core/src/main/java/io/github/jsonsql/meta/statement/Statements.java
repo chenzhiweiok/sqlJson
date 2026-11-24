@@ -1,4 +1,6 @@
-package io.github.jsonsql.meta;
+package io.github.jsonsql.meta.statement;
+
+import io.github.jsonsql.meta.EntityDescriptor;
 
 import io.github.jsonsql.engine.SqlV2;
 import com.fasterxml.jackson.databind.node.ArrayNode;

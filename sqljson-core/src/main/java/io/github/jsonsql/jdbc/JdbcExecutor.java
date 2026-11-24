@@ -1,5 +1,7 @@
 package io.github.jsonsql.jdbc;
 
+import io.github.jsonsql.sql.SqlStatement;
+
 import io.github.jsonsql.mapping.BeanMapper;
 import io.github.jsonsql.support.SqlLog;
 import io.github.jsonsql.support.SqlMetrics;
@@ -208,6 +210,74 @@ public final class JdbcExecutor {
                 }
             }
         });
+    }
+
+    /**
+     * 流式读取：边读边交给回调，不把结果集攒成 List。
+     *
+     * <p><b>为什么需要它</b>：{@link #query} 会把所有行映射成对象放进内存，
+     * 百万行导出时先 OOM 的是应用而不是数据库。这里逐行映射、逐行消费，
+     * 内存占用与结果集大小无关，只与 fetchSize 有关。
+     *
+     * <p><b>回调在连接作用域内执行</b>：消费逻辑跑在 {@code TxContext.work} 的 lambda 内部，
+     * 也就是连接还没归还的时候。所以回调里<b>不要做远程调用或长时间阻塞</b>——
+     * 那会一直占着这条连接，连接池很快被耗光。
+     *
+     * <p><b>MySQL 的流式需要额外配合</b>：默认驱动会把整个结果集先拉到客户端，
+     * {@code setFetchSize(n)} 并不会真的分批。要真流式，需要：
+     * <ul>
+     *   <li>把 {@code fetchSize} 设为 {@link Integer#MIN_VALUE}（MySQL 的约定），或</li>
+     *   <li>连接串加 {@code useCursorFetch=true} 且 {@code fetchSize > 0}。</li>
+     * </ul>
+     * PostgreSQL 要求不在自动提交模式下——事务块内天然满足。
+     *
+     * @param stmt      语句标识，用于日志与指标
+     * @param sql       参数化 SQL
+     * @param args      参数
+     * @param type      行映射目标类型
+     * @param fetchSize 每次从驱动拉取的行数；小于 1 时不设置（用驱动默认值）
+     * @param consumer  行消费者，不能为 null
+     * @param <T>       目标类型
+     * @return 实际消费的行数
+     */
+    public <T> int queryEach(String stmt, String sql, List<Object> args, Class<T> type,
+                             int fetchSize, java.util.function.Consumer<T> consumer) {
+        if (consumer == null) {
+            throw new IllegalArgumentException("consumer 不能为 null");
+        }
+        List<Object> a = args == null ? List.of() : args;
+        return exec(stmt, sql, a, c -> {
+            int rows = 0;
+            try (PreparedStatement ps = c.prepareStatement(sql)) {
+                if (fetchSize > 0) {
+                    ps.setFetchSize(fetchSize);
+                }
+                bind(ps, a);
+                try (ResultSet rs = ps.executeQuery()) {
+                    while (rs.next()) {
+                        consumer.accept(BeanMapper.fromRow(rs, type));
+                        rows++;
+                    }
+                }
+            }
+            return rows;
+        });
+    }
+
+    /**
+     * 流式读取，默认 500 行一批。
+     *
+     * @param stmt     语句标识
+     * @param sql      参数化 SQL
+     * @param args     参数
+     * @param type     行映射目标类型
+     * @param consumer 行消费者
+     * @param <T>      目标类型
+     * @return 实际消费的行数
+     */
+    public <T> int queryEach(String stmt, String sql, List<Object> args, Class<T> type,
+                             java.util.function.Consumer<T> consumer) {
+        return queryEach(stmt, sql, args, type, 500, consumer);
     }
 
     // ---------------- 内部 ----------------

@@ -1,13 +1,7 @@
-package io.github.jsonsql.meta;
+package io.github.jsonsql.meta.statement;
 
 import io.github.jsonsql.SqlSpecException;
-import io.github.jsonsql.meta.statement.DeleteByIdStatement;
-import io.github.jsonsql.meta.statement.FindAllStatement;
-import io.github.jsonsql.meta.statement.FindByIdStatement;
-import io.github.jsonsql.meta.statement.FindPageStatement;
-import io.github.jsonsql.meta.statement.InsertStatement;
-import io.github.jsonsql.meta.statement.StatementFactory;
-import io.github.jsonsql.meta.statement.UpdateByIdStatement;
+import io.github.jsonsql.meta.EntityDescriptor;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 
 import java.util.ArrayList;
@@ -30,12 +24,13 @@ import java.util.Map;
  */
 public final class DefaultStatementSet {
 
-    /** 默认六条，顺序即输出顺序 */
+    /** 默认七条，顺序即输出顺序；要加第八条只需写一个 StatementFactory 并加进来 */
     private static final List<StatementFactory> STANDARD = List.of(
             new InsertStatement(),
             new UpdateByIdStatement(),
             new DeleteByIdStatement(),
             new FindByIdStatement(),
+            new FindByIdsStatement(),
             new FindAllStatement(),
             new FindPageStatement());
 

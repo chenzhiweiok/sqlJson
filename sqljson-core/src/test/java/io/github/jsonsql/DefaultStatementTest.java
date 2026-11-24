@@ -12,7 +12,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import io.github.jsonsql.meta.DefaultStatementSet;
+import io.github.jsonsql.meta.statement.DefaultStatementSet;
 import io.github.jsonsql.meta.EntityDescriptor;
 import io.github.jsonsql.meta.statement.FindByIdStatement;
 import io.github.jsonsql.meta.statement.InsertStatement;
@@ -26,14 +26,14 @@ class DefaultStatementTest {
     class Assembly {
 
         @Test
-        @DisplayName("六条语句全部生成，顺序固定")
-        void sixStatements() {
+        @DisplayName("七条语句全部生成，顺序固定")
+        void sevenStatements() {
             ObjectNode ns = EntityDescriptor.of(TestEntities.User.class).defaultStatements();
 
             assertEquals(List.of("insert", "updateById", "deleteById",
-                            "findById", "findAll", "findPage"),
+                            "findById", "findByIds", "findAll", "findPage"),
                     DefaultStatementSet.names());
-            assertEquals(6, ns.size());
+            assertEquals(7, ns.size());
             for (String name : DefaultStatementSet.names()) {
                 assertTrue(ns.has(name), "缺少语句 " + name);
                 assertTrue(ns.get(name).has("sql"), name + " 缺少 sql 数组");
